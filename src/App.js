@@ -14,33 +14,19 @@ import PortfolioInsights from './components/PortfolioInsights';
 import PerformanceMetrics from './components/PerformanceMetrics';
 
 // --- STYLED COMPONENTS ---
-// Here, I'm defining custom-styled components using MUI's `styled` utility.
-// This keeps my styling logic separate from the main component structure.
-
-// This is a simple fade-in animation I'll apply to my main content blocks.
 const fadeIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 `;
 
-// I created this `AnimatedPaper` to be my standard container for sections.
-// It uses the `fadeIn` animation and has a nice, soft shadow and rounded corners.
 const AnimatedPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   borderRadius: '16px',
   boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.08)',
   animation: `${fadeIn} 0.7s ease-in-out`,
-  height: '100%' // This makes sure cards in the same row have the same height.
+  height: '100%'
 }));
 
-// This is the style for my four summary cards at the top.
-// I added a little "lift" effect on hover to make it feel interactive.
 const DashboardCard = styled(Card)(({ theme }) => ({
   height: '100%',
   display: 'flex',
@@ -54,8 +40,6 @@ const DashboardCard = styled(Card)(({ theme }) => ({
   },
 }));
 
-// This is for my section titles, like "Allocation by Sector".
-// The `&:after` creates that little colored underline for a nice visual touch.
 const SectionHeader = styled(Typography)(({ theme }) => ({
   marginBottom: theme.spacing(4),
   fontWeight: 700,
@@ -76,53 +60,50 @@ const SectionHeader = styled(Typography)(({ theme }) => ({
 
 // This is my main App component where everything comes together.
 function App() {
-  // I'm using MUI's theme for consistent styling.
   const theme = useTheme();
-  // This hook helps me make the layout responsive for mobile.
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
-  // I'm using state to hold the portfolio data, loading status, and any potential errors.
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // This `useEffect` hook runs once when the component mounts to fetch all my data.
   useEffect(() => {
     // I'm creating an async function to fetch all my data from the backend.
     const fetchAllData = async () => {
+      // KEY CHANGE FOR DEPLOYMENT:
+      // I'm using an environment variable for my API's base URL.
+      // When I run `npm start` locally, it will default to 'http://localhost:5000'.
+      // When I deploy to Vercel, it will use the REACT_APP_API_URL I set in the Vercel dashboard.
+      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
       try {
         // I'm using Promise.all to make all API calls concurrently for better performance.
         const [summaryRes, holdingsRes, allocationRes, performanceRes] = await Promise.all([
-          fetch('http://localhost:5000/api/portfolio/summary'),
-          fetch('http://localhost:5000/api/portfolio/holdings'),
-          fetch('http://localhost:5000/api/portfolio/allocation'),
-          fetch('http://localhost:5000/api/portfolio/performance')
+          fetch(`${API_URL}/api/portfolio/summary`),
+          fetch(`${API_URL}/api/portfolio/holdings`),
+          fetch(`${API_URL}/api/portfolio/allocation`),
+          fetch(`${API_URL}/api/portfolio/performance`)
         ]);
 
-        // I'm checking if any of the responses failed.
         if (!summaryRes.ok || !holdingsRes.ok || !allocationRes.ok || !performanceRes.ok) {
           throw new Error('Network response was not ok. Please ensure the backend server is running.');
         }
 
-        // I'm parsing the JSON from each response.
         const summary = await summaryRes.json();
         const holdings = await holdingsRes.json();
         const allocation = await allocationRes.json();
         const performance = await performanceRes.json();
         
-        // I'm combining all the data into a single state object.
         setData({
-          ...summary, // Spreading the summary properties (totalValue, etc.) to the top level.
+          ...summary,
           holdings,
           allocation,
           performance,
         });
 
       } catch (err) {
-        // If anything goes wrong, I'll set an error message.
         setError(err.message);
       } finally {
-        // Finally, I'll stop the loading spinner.
         setLoading(false);
       }
     };
@@ -130,12 +111,10 @@ function App() {
     fetchAllData();
   }, []); // The empty array `[]` means this effect only runs once.
 
-  // While the data is loading, I show a simple loading spinner.
   if (loading) {
     return (<Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh"><CircularProgress size={60} /></Box>);
   }
 
-  // This is my UI for displaying an error message if the data fetch fails.
   if (error) {
     return (
       <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" minHeight="100vh" textAlign="center" sx={{ p: 3 }}>
@@ -145,17 +124,14 @@ function App() {
     );
   }
 
-  // This is the main JSX that renders my dashboard.
   return (
     <Box sx={{ minHeight: '100vh', width: '100%', backgroundColor: theme.palette.background.default, py: { xs: 3, md: 5 } }}>
       <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
-        {/* Header Section */}
         <Box sx={{ mb: 5, textAlign: 'center' }}>
           <Typography variant={isMobile ? "h4" : "h3"} component="h1" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>Portfolio Analytics Dashboard</Typography>
           <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>A comprehensive view of your investments</Typography>
         </Box>
 
-        {/* Summary Cards Section */}
         <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', mb: 5 }}>
           <Grid container spacing={isMobile ? 2 : 3} sx={{ maxWidth: '1100px' }}>
             {[
@@ -176,12 +152,10 @@ function App() {
           </Grid>
         </Box>
         
-        {/* I'm rendering my new PortfolioInsights component here, passing the whole data object as the summary. */}
         <Box sx={{ mb: 5 }}>
             <PortfolioInsights summary={data} />
         </Box>
 
-        {/* Allocation Charts Section */}
         <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 5 }}>
           <Grid item xs={12} md={4}>
             <AnimatedPaper variant="outlined">
@@ -203,7 +177,6 @@ function App() {
           </Grid>
         </Grid>
 
-        {/* Performance Chart & Metrics Section */}
         <Box sx={{ mb: 5 }}>
           <AnimatedPaper variant="outlined">
             <SectionHeader variant="h5">Performance Comparison</SectionHeader>
@@ -213,7 +186,6 @@ function App() {
                         <PerformanceChart performance={data.performance} />
                     </Box>
                 </Grid>
-                {/* I'm rendering the new PerformanceMetrics component next to the line chart. */}
                 <Grid item xs={12} lg={4}>
                     <PerformanceMetrics returns={data.performance.returns} />
                 </Grid>
@@ -221,10 +193,8 @@ function App() {
           </AnimatedPaper>
         </Box>
 
-        {/* Holdings Table Section */}
         <AnimatedPaper variant="outlined">
           <SectionHeader variant="h5">Your Holdings</SectionHeader>
-          {/* I'm now passing the holdings data from the state to the table. */}
           <HoldingsTable holdings={data.holdings} />
         </AnimatedPaper>
       </Container>
