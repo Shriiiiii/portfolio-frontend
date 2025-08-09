@@ -1,3 +1,4 @@
+// First, I'm importing everything I need from React and Material-UI.
 import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, Grid, Card, CardContent, Container,
@@ -5,26 +6,41 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
-// I'm importing all my components, including the new ones.
+// I'm also importing all the child components that make up my dashboard.
 import HoldingsTable from './components/HoldingsTable';
 import PerformanceChart from './components/PerformanceChart';
 import AllocationPieChart from './components/AllocationPieChart';
 import PortfolioInsights from './components/PortfolioInsights';
 import PerformanceMetrics from './components/PerformanceMetrics';
 
+// --- STYLED COMPONENTS ---
+// Here, I'm defining custom-styled components using MUI's `styled` utility.
+// This keeps my styling logic separate from the main component structure.
+
+// This is a simple fade-in animation I'll apply to my main content blocks.
 const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 `;
 
+// I created this `AnimatedPaper` to be my standard container for sections.
+// It uses the `fadeIn` animation and has a nice, soft shadow and rounded corners.
 const AnimatedPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   borderRadius: '16px',
   boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.08)',
   animation: `${fadeIn} 0.7s ease-in-out`,
-  height: '100%'
+  height: '100%' // This makes sure cards in the same row have the same height.
 }));
 
+// This is the style for my four summary cards at the top.
+// I added a little "lift" effect on hover to make it feel interactive.
 const DashboardCard = styled(Card)(({ theme }) => ({
   height: '100%',
   display: 'flex',
@@ -38,6 +54,8 @@ const DashboardCard = styled(Card)(({ theme }) => ({
   },
 }));
 
+// This is for my section titles, like "Allocation by Sector".
+// The `&:after` creates that little colored underline for a nice visual touch.
 const SectionHeader = styled(Typography)(({ theme }) => ({
   marginBottom: theme.spacing(4),
   fontWeight: 700,
@@ -56,20 +74,19 @@ const SectionHeader = styled(Typography)(({ theme }) => ({
   }
 }));
 
-const sampleHoldings = [
-    { name: 'Reliance Industries', symbol: 'RELIANCE', quantity: 50, avgPrice: 2800, currentValue: 2950.55, gainLoss: 7527.5, sector: 'Energy' },
-    { name: 'HDFC Bank', symbol: 'HDFCBANK', quantity: 100, avgPrice: 1500, currentValue: 1580.20, gainLoss: 8020, sector: 'Banking' },
-    { name: 'Infosys Ltd', symbol: 'INFY', quantity: 200, avgPrice: 1450, currentValue: 1625.75, gainLoss: 35150, sector: 'Technology' },
-    { name: 'Tata Consultancy Services', symbol: 'TCS', quantity: 75, avgPrice: 3800, currentValue: 3990.00, gainLoss: 14250, sector: 'Technology' },
-];
-
+// This is my main App component where everything comes together.
 function App() {
+  // I'm using MUI's theme for consistent styling.
   const theme = useTheme();
+  // This hook helps me make the layout responsive for mobile.
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // I'm using state to hold the portfolio data, loading status, and any potential errors.
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // State for error handling
+  const [error, setError] = useState(null);
 
+  // This `useEffect` hook runs once when the component mounts to fetch all my data.
   useEffect(() => {
     // I'm creating an async function to fetch all my data from the backend.
     const fetchAllData = async () => {
@@ -84,7 +101,7 @@ function App() {
 
         // I'm checking if any of the responses failed.
         if (!summaryRes.ok || !holdingsRes.ok || !allocationRes.ok || !performanceRes.ok) {
-          throw new Error('Network response was not ok');
+          throw new Error('Network response was not ok. Please ensure the backend server is running.');
         }
 
         // I'm parsing the JSON from each response.
@@ -95,7 +112,7 @@ function App() {
         
         // I'm combining all the data into a single state object.
         setData({
-          ...summary, // Spreading the summary properties
+          ...summary, // Spreading the summary properties (totalValue, etc.) to the top level.
           holdings,
           allocation,
           performance,
@@ -111,14 +128,14 @@ function App() {
     };
 
     fetchAllData();
-  }, []); // The empty array ensures this runs only once.
+  }, []); // The empty array `[]` means this effect only runs once.
 
   // While the data is loading, I show a simple loading spinner.
   if (loading) {
     return (<Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh"><CircularProgress size={60} /></Box>);
   }
 
-  // This is the new error handling UI.
+  // This is my UI for displaying an error message if the data fetch fails.
   if (error) {
     return (
       <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" minHeight="100vh" textAlign="center" sx={{ p: 3 }}>
@@ -159,11 +176,12 @@ function App() {
           </Grid>
         </Box>
         
-        {/* I'm passing the correct data objects to my new components. */}
+        {/* I'm rendering my new PortfolioInsights component here, passing the whole data object as the summary. */}
         <Box sx={{ mb: 5 }}>
             <PortfolioInsights summary={data} />
         </Box>
 
+        {/* Allocation Charts Section */}
         <Grid container spacing={isMobile ? 2 : 3} sx={{ mb: 5 }}>
           <Grid item xs={12} md={4}>
             <AnimatedPaper variant="outlined">
@@ -185,6 +203,7 @@ function App() {
           </Grid>
         </Grid>
 
+        {/* Performance Chart & Metrics Section */}
         <Box sx={{ mb: 5 }}>
           <AnimatedPaper variant="outlined">
             <SectionHeader variant="h5">Performance Comparison</SectionHeader>
@@ -194,6 +213,7 @@ function App() {
                         <PerformanceChart performance={data.performance} />
                     </Box>
                 </Grid>
+                {/* I'm rendering the new PerformanceMetrics component next to the line chart. */}
                 <Grid item xs={12} lg={4}>
                     <PerformanceMetrics returns={data.performance.returns} />
                 </Grid>
@@ -201,8 +221,10 @@ function App() {
           </AnimatedPaper>
         </Box>
 
+        {/* Holdings Table Section */}
         <AnimatedPaper variant="outlined">
           <SectionHeader variant="h5">Your Holdings</SectionHeader>
+          {/* I'm now passing the holdings data from the state to the table. */}
           <HoldingsTable holdings={data.holdings} />
         </AnimatedPaper>
       </Container>
