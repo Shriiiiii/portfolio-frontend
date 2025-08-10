@@ -4,6 +4,8 @@ This is the frontend for the Portfolio Analytics Dashboard, a full-stack web app
 Live Demo: https://portfolio-frontend-chi-woad.vercel.app/
 
 Backend API Repository: https://github.com/Shriiiiii/portfolio-backend
+<img width="1914" height="1034" alt="Screenshot 2025-08-10 100229" src="https://github.com/user-attachments/assets/8b6cda03-7751-4920-8846-94e726ba64bb" />
+
 
 
 ✨ Features
