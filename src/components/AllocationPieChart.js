@@ -1,90 +1,135 @@
-// I'm importing React and the Pie component from the chart library.
+
 import React from 'react';
-import { Pie } from 'react-chartjs-2';
-
-// I need to import and register the specific parts of Chart.js that the Pie chart uses.
-import { 
+import { Doughnut } from 'react-chartjs-2';
+import {
   Chart as ChartJS,
-  ArcElement, // This draws the "slices" of the pie.
-  Tooltip,    // This shows the popup when I hover over a slice.
-  Legend      // This displays the key (e.g., "Technology", "Banking").
+  ArcElement,
+  Tooltip,
+  Legend
 } from 'chart.js';
-import { useTheme } from '@mui/material';
+import { useTheme, alpha, Box, Typography } from '@mui/material';
+import PieChartOutlineIcon from '@mui/icons-material/PieChartOutline';
 
-// Here, I'm officially registering these parts with Chart.js.
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-// This is my reusable Pie Chart component. It receives `data` as a prop.
+// Modern doughnut chart with improved styling and center label
 const AllocationPieChart = ({ data }) => {
-  // I'm accessing my global theme to use my consistent brand colors.
   const theme = useTheme();
 
-  // I'm preparing the data in the format that Chart.js expects.
+  // Calculate total value for center display
+  const totalValue = Object.values(data).reduce((sum, item) => sum + (item.value || 0), 0);
+
   const chartData = {
-    // The labels are the names of the slices (e.g., "Technology", "Equity").
     labels: Object.keys(data),
     datasets: [{
-      // The data is an array of the numerical values for each slice.
       data: Object.values(data).map(item => item.value),
-      // I've defined a nice color palette for the slices.
       backgroundColor: [
         theme.palette.primary.main,
-        '#673ab7', // A nice purple
-        '#ff9800', // A vibrant orange
-        '#e91e63', // A vivid pink
-        '#00bcd4', // A clean cyan
-        theme.palette.success.main
+        theme.palette.secondary.main,
+        theme.palette.success.main,
+        theme.palette.warning.main,
+        theme.palette.error.main,
+        theme.palette.info.main,
+        theme.palette.text.primary,
       ],
-      borderWidth: 2, // A small border helps separate the slices visually.
-      borderColor: theme.palette.background.paper, // The border color matches the card background.
-      hoverOffset: 15 // This makes the slice pop out a bit on hover.
+      borderWidth: 2,
+      borderColor: theme.palette.background.paper,
+      hoverOffset: 20,
+      borderRadius: 6,
+      spacing: 2,
+      cutout: '65%'
     }]
   };
 
-  // Here, I'm configuring the options to control how the chart looks and behaves.
   const options = {
-    responsive: true, // This makes the chart resize with its container.
-    maintainAspectRatio: false, // I need this to be false to control the height manually.
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'bottom', // I placed the legend at the bottom to keep the chart centered.
+        position: 'bottom',
         labels: {
           font: {
-            family: theme.typography.fontFamily, // Using my app's font.
-            size: 14
+            family: theme.typography.fontFamily,
+            size: 12,
+            weight: 600
           },
           padding: 20,
-          usePointStyle: true, // This makes the legend key a circle instead of a box.
-          color: theme.palette.text.primary
+          usePointStyle: true,
+          pointStyle: 'circle',
+          color: theme.palette.text.primary,
+          generateLabels: (chart) => {
+            const datasets = chart.data.datasets;
+            return chart.data.labels.map((label, i) => {
+              const value = datasets[0].data[i];
+              const percentage = ((value / totalValue) * 100).toFixed(1);
+              return {
+                text: `${label}: ${percentage}%`,
+                fillStyle: datasets[0].backgroundColor[i],
+                strokeStyle: datasets[0].borderColor,
+                lineWidth: datasets[0].borderWidth,
+                hidden: isNaN(datasets[0].data[i]) || chart.getDatasetMeta(0).data[i].hidden,
+                index: i
+              };
+            });
+          }
         }
       },
       tooltip: {
-        // I'm styling the tooltip to match my app's theme.
         backgroundColor: theme.palette.background.paper,
         titleColor: theme.palette.text.primary,
         bodyColor: theme.palette.text.secondary,
         borderColor: theme.palette.divider,
         borderWidth: 1,
-        padding: 12,
+        padding: 16,
         usePointStyle: true,
-        // This callback lets me customize the text inside the tooltip.
+        boxPadding: 6,
         callbacks: {
           label: function(context) {
             const label = context.label || '';
             const value = context.raw || 0;
-            // I'm safely checking if the percentage exists before adding it.
-            const percentage = data[context.label]?.percentage;
-            const percentageString = percentage ? ` (${percentage.toFixed(1)}%)` : '';
-            return `${label}: ₹${value.toLocaleString('en-IN')}${percentageString}`;
+            const percentage = ((value / totalValue) * 100).toFixed(1);
+            return `${label}: ₹${value.toLocaleString('en-IN')} (${percentage}%)`;
           }
         }
       }
-    }
+    },
+    cutout: '65%'
   };
 
-  // Finally, I'm returning the Pie component with my data and options.
-  // The `devicePixelRatio` prop is the fix for the blurriness on high-res screens.
-  return <Pie data={chartData} options={options} devicePixelRatio={window.devicePixelRatio} />;
+  // Center text component
+  const CenterText = () => (
+    <Box
+      sx={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        textAlign: 'center',
+        pointerEvents: 'none'
+      }}
+    >
+      <PieChartOutlineIcon 
+        sx={{ 
+          fontSize: '2rem', 
+          color: theme.palette.text.secondary,
+          mb: 0.5
+        }} 
+      />
+      <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.text.primary }}>
+        {`₹${(totalValue / 100000).toFixed(1)}L`}
+      </Typography>
+      <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+        Total Value
+      </Typography>
+    </Box>
+  );
+
+  return (
+    <Box sx={{ position: 'relative', height: '100%' }}>
+      <Doughnut data={chartData} options={options} />
+      <CenterText />
+    </Box>
+  );
 };
 
 export default AllocationPieChart;

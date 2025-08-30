@@ -1,100 +1,181 @@
-// I'm importing React and the Material-UI components I need for this section.
+
 import React from 'react';
-import { Box, Typography, Paper, Grid, Divider, Chip } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  Card, 
+  CardContent, 
+  Grid, 
+  Divider, 
+  Chip,
+  LinearProgress,
+  Stack,
+  useTheme,
+  alpha
+} from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import InsightsIcon from '@mui/icons-material/Insights';
-import { styled } from '@mui/material/styles';
+import Diversity3Icon from '@mui/icons-material/Diversity3';
+import RiskIcon from '@mui/icons-material/Warning';
 
-// I'm creating a styled component for the insight cards to reduce code repetition.
-const InsightCard = styled(Box)(({ theme, borderColor }) => ({
-  padding: theme.spacing(2),
-  border: `1px solid ${borderColor}`,
-  borderRadius: theme.shape.borderRadius * 1.5,
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center'
-}));
-
-// This is my component for showing the portfolio's key insights.
-// It takes a `summary` object as a prop, which will contain all the necessary data.
+// Full-width portfolio insights component
 const PortfolioInsights = ({ summary }) => {
-  // If for some reason the summary data hasn't loaded, I'll render nothing.
+  const theme = useTheme();
+
   if (!summary) {
     return null;
   }
 
-  // A helper function to determine the color of the risk chip.
   const getRiskColor = (level) => {
     if (level === 'High') return 'error';
     if (level === 'Moderate') return 'warning';
     return 'success';
   };
 
+  const getDiversificationScoreColor = (score) => {
+    if (score >= 8) return 'success';
+    if (score >= 5) return 'warning';
+    return 'error';
+  };
+
+  const PerformerCard = ({ title, performer, isTop, color }) => (
+    <Card 
+      sx={{ 
+        p: 3,
+        borderRadius: '12px',
+        background: theme.palette.mode === 'dark'
+          ? `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${alpha(color, 0.15)} 100%)`
+          : `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${alpha(color, 0.08)} 100%)`,
+        border: `1px solid ${alpha(color, 0.2)}`,
+        height: '100%'
+      }}
+    >
+      <Stack spacing={2}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          {isTop ? (
+            <TrendingUpIcon sx={{ color, fontSize: '2rem' }} />
+          ) : (
+            <TrendingDownIcon sx={{ color, fontSize: '2rem' }} />
+          )}
+          <Typography variant="h6" sx={{ fontWeight: 700, color }}>
+            {title}
+          </Typography>
+        </Stack>
+        
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, mb: 0.5 }}>
+            {performer.symbol}
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+            {performer.name}
+          </Typography>
+        </Box>
+
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <Chip
+            label={`${isTop ? '+' : ''}${performer.gainPercent.toFixed(2)}%`}
+            size="large"
+            sx={{ 
+              backgroundColor: alpha(color, 0.2),
+              color: color,
+              fontWeight: 800,
+              fontSize: '1.1rem',
+              padding: '8px 16px'
+            }}
+          />
+        </Stack>
+      </Stack>
+    </Card>
+  );
+
   return (
-    // I'm using a Paper component for the container with my standard styling.
-    <Paper elevation={0} variant="outlined" sx={{ p: 3, borderRadius: '16px' }}>
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
-        Portfolio Insights
-      </Typography>
-      <Grid container spacing={3}>
-        {/* Top Performer Card */}
-        <Grid item xs={12} sm={6}>
-          <InsightCard borderColor="success.light">
-            <Box display="flex" alignItems="center" mb={1}>
-              <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'success.dark' }}>
-                Top Performer
-              </Typography>
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              {summary.topPerformer.name} ({summary.topPerformer.symbol})
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'success.main', fontWeight: 'bold' }}>
-              +{summary.topPerformer.gainPercent.toFixed(2)}%
-            </Typography>
-          </InsightCard>
+    <Box>
+      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+        <InsightsIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+        <Typography variant="h4" sx={{ fontWeight: 800 }}>
+          Portfolio Insights
+        </Typography>
+      </Stack>
+      
+      <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={6}>
+          <PerformerCard
+            title="Top Performer"
+            performer={summary.topPerformer}
+            isTop={true}
+            color={theme.palette.success.main}
+          />
         </Grid>
-
-        {/* Worst Performer Card */}
-        <Grid item xs={12} sm={6}>
-          <InsightCard borderColor="error.light">
-            <Box display="flex" alignItems="center" mb={1}>
-              <TrendingDownIcon color="error" sx={{ mr: 1 }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: 'error.dark' }}>
-                Worst Performer
-              </Typography>
-            </Box>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              {summary.worstPerformer.name} ({summary.worstPerformer.symbol})
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'error.main', fontWeight: 'bold' }}>
-              {summary.worstPerformer.gainPercent.toFixed(2)}%
-            </Typography>
-          </InsightCard>
-        </Grid>
-
-        {/* Diversification and Risk Section */}
-        <Grid item xs={12}>
-          <Divider sx={{ my: 2 }} />
-          <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
-            <Box display="flex" alignItems="center">
-              <InsightsIcon color="primary" sx={{ mr: 1.5 }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
-                Diversification Score: <strong style={{ fontSize: '1.2rem' }}>{summary.diversificationScore}/10</strong>
-              </Typography>
-            </Box>
-            <Chip 
-              label={`Risk Level: ${summary.riskLevel}`} 
-              color={getRiskColor(summary.riskLevel)}
-              variant="filled"
-              size="medium"
-            />
-          </Box>
+        
+        <Grid item xs={12} md={6}>
+          <PerformerCard
+            title="Worst Performer"
+            performer={summary.worstPerformer}
+            isTop={false}
+            color={theme.palette.error.main}
+          />
         </Grid>
       </Grid>
-    </Paper>
+
+      <Divider sx={{ my: 3 }} />
+
+      {/* Diversification Score */}
+      <Box sx={{ mb: 3 }}>
+        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+          <Diversity3Icon sx={{ fontSize: '1.5rem', color: 'primary.main' }} />
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Diversification Score
+          </Typography>
+        </Stack>
+        <Stack direction="row" alignItems="center" spacing={3}>
+          <LinearProgress 
+            variant="determinate" 
+            value={summary.diversificationScore * 10} 
+            sx={{ 
+              flexGrow: 1,
+              height: 12,
+              borderRadius: 6,
+              backgroundColor: theme.palette.action.hover,
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: theme.palette[getDiversificationScoreColor(summary.diversificationScore)].main,
+                borderRadius: 6
+              }
+            }}
+          />
+          <Chip 
+            label={`${summary.diversificationScore}/10`} 
+            color={getDiversificationScoreColor(summary.diversificationScore)}
+            size="large"
+            sx={{ 
+              fontSize: '1.1rem',
+              fontWeight: 700,
+              padding: '8px 16px'
+            }}
+          />
+        </Stack>
+      </Box>
+
+      {/* Risk Level */}
+      <Stack direction="row" alignItems="center" spacing={3}>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <RiskIcon sx={{ fontSize: '1.5rem', color: 'primary.main' }} />
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Risk Level
+          </Typography>
+        </Stack>
+        <Chip 
+          label={summary.riskLevel} 
+          color={getRiskColor(summary.riskLevel)}
+          size="large"
+          sx={{ 
+            fontSize: '1.1rem',
+            fontWeight: 700,
+            padding: '8px 24px'
+          }}
+        />
+      </Stack>
+    </Box>
   );
 };
 

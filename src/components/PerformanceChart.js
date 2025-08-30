@@ -1,22 +1,20 @@
-// I'm importing React and the Line component from the chart library.
+
 import React from 'react';
 import { Line } from 'react-chartjs-2';
-
-// Just like the pie chart, I need to import and register the parts for the line chart.
-import { 
+import {
   Chart as ChartJS,
-  CategoryScale, // For the X-axis (dates).
-  LinearScale,   // For the Y-axis (values).
-  PointElement,  // For the dots on the line.
-  LineElement,   // For the line itself.
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
   Title,
   Tooltip,
   Legend,
-  Filler         // This is needed to create the colored area under the line.
+  Filler
 } from 'chart.js';
-import { Box, useTheme } from '@mui/material';
+import { Box, useTheme, alpha } from '@mui/material';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
-// Registering all the parts.
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -28,126 +26,164 @@ ChartJS.register(
   Filler
 );
 
-// This is my Performance Chart component. It takes `performance` data as a prop.
+// Modern performance chart with improved styling and interactivity
 const PerformanceChart = ({ performance }) => {
   const theme = useTheme();
   
-  // I'm preparing the data for the line chart.
   const data = {
-    // The labels are the dates for the X-axis. I'm formatting them to be more readable.
     labels: performance.timeline.map(item => new Date(item.date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })),
     datasets: [
       {
         label: 'Your Portfolio',
         data: performance.timeline.map(item => item.portfolio),
         borderColor: theme.palette.primary.main,
-        // This was the fix for the black background. I'm using my primary color
-        // with a '33' hex code at the end, which makes it semi-transparent.
-        backgroundColor: `${theme.palette.primary.main}33`, 
-        tension: 0.4, // This makes the line curved and smooth.
-        fill: true, // This tells the chart to fill the area under the line.
-        borderWidth: 2,
-        pointRadius: 3,
+        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+        tension: 0.4,
+        fill: true,
+        borderWidth: 3,
+        pointRadius: 0,
         pointHoverRadius: 6,
         pointBackgroundColor: theme.palette.primary.main,
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: theme.palette.primary.main,
+        pointHoverBorderColor: '#ffffff',
+        pointHoverBorderWidth: 3,
       },
       {
         label: 'Nifty 50',
         data: performance.timeline.map(item => item.nifty50),
         borderColor: theme.palette.secondary.main,
-        backgroundColor: `${theme.palette.secondary.main}33`,
+        backgroundColor: alpha(theme.palette.secondary.main, 0.1),
         tension: 0.4,
         fill: true,
         borderWidth: 2,
-        pointRadius: 3,
+        pointRadius: 0,
         pointHoverRadius: 6,
         pointBackgroundColor: theme.palette.secondary.main,
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: theme.palette.secondary.main,
+        pointHoverBorderColor: '#ffffff',
+        pointHoverBorderWidth: 3,
+        borderDash: [5, 5],
       },
       {
         label: 'Gold',
         data: performance.timeline.map(item => item.gold),
         borderColor: theme.palette.warning.main,
-        backgroundColor: `${theme.palette.warning.main}33`,
+        backgroundColor: alpha(theme.palette.warning.main, 0.1),
         tension: 0.4,
         fill: true,
         borderWidth: 2,
-        pointRadius: 3,
+        pointRadius: 0,
         pointHoverRadius: 6,
         pointBackgroundColor: theme.palette.warning.main,
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointHoverBackgroundColor: theme.palette.warning.main,
+        pointHoverBorderColor: '#ffffff',
+        pointHoverBorderWidth: 3,
+        borderDash: [3, 3],
       }
     ]
   };
 
-  // Configuring the look and feel of the line chart.
   const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
-        align: 'end', // Aligns the legend to the right side.
+        align: 'end',
         labels: {
           font: {
             family: theme.typography.fontFamily,
-            size: 14
+            size: 13,
+            weight: 600
           },
           padding: 20,
           usePointStyle: true,
           boxWidth: 8,
+          color: theme.palette.text.primary,
         }
       },
       tooltip: {
-        // Styling the tooltip to match.
         backgroundColor: theme.palette.background.paper,
         titleColor: theme.palette.text.primary,
         bodyColor: theme.palette.text.secondary,
         borderColor: theme.palette.divider,
         borderWidth: 1,
-        padding: 12,
+        padding: 16,
         usePointStyle: true,
+        boxPadding: 6,
         callbacks: {
+          title: function(context) {
+            return new Date(performance.timeline[context[0].dataIndex].date).toLocaleDateString('en-IN', { 
+              day: 'numeric', 
+              month: 'long', 
+              year: 'numeric' 
+            });
+          },
           label: function(context) {
             return `${context.dataset.label}: ₹${context.parsed.y.toLocaleString('en-IN')}`;
           }
         }
       }
     },
-    // Customizing the X and Y axes.
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
     scales: {
       x: {
         grid: {
-          display: false // I'm hiding the vertical grid lines to make it cleaner.
+          display: false,
+          drawBorder: false,
         },
         ticks: {
-          color: theme.palette.text.secondary
+          color: theme.palette.text.secondary,
+          font: {
+            size: 12,
+            weight: 500
+          },
+          maxRotation: 0,
+          padding: 10,
         }
       },
       y: {
         grid: {
-          color: theme.palette.divider, // Using a subtle color for the horizontal grid lines.
+          color: alpha(theme.palette.divider, 0.5),
           drawBorder: false,
         },
         ticks: {
           color: theme.palette.text.secondary,
           padding: 10,
-          // This callback formats the Y-axis labels to be shorter (e.g., "₹1L" instead of "₹100,000").
+          font: {
+            size: 12,
+            weight: 500
+          },
           callback: function(value) {
             if (value >= 100000) {
-              return `₹${value / 100000}L`;
+              return `₹${(value / 100000).toFixed(1)}L`;
             }
             if (value >= 1000) {
-              return `₹${value / 1000}k`;
+              return `₹${(value / 1000).toFixed(1)}k`;
             }
             return `₹${value}`;
           }
         }
       }
+    },
+    elements: {
+      line: {
+        tension: 0.4
+      }
     }
   };
 
-  // Returning the Line component inside a Box to control its height.
   return (
-    <Box sx={{ height: '100%' }}>
+    <Box sx={{ height: '100%', position: 'relative' }}>
       <Line data={data} options={options} />
     </Box>
   );
